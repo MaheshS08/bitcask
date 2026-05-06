@@ -2,6 +2,7 @@ package com.bitcask.storage;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.zip.CRC32;
 
 /**
  * A single entry in the Bitcask log.
@@ -26,6 +27,7 @@ public final class LogRecord {
 
     /** Fixed header size in bytes: crc(4) + ts(8) + ksz(2) + vsz(4). */
     private static final int HEADER = 18;
+    private static final int CRC_SIZE = 4;
 
     private final int crc;
     private final long timestamp;
@@ -34,17 +36,13 @@ public final class LogRecord {
     private final byte[] key;
     private final byte[] value;
 
-    public LogRecord(int crc, long timestamp, short keySize, int valueSize, byte[] key, byte[] value) {
+    public LogRecord(int crc, long timestamp, byte[] key, byte[] value) {
         this.crc = crc;
         this.timestamp = timestamp;
-        this.keySize = keySize;
-        this.valueSize = valueSize;
+        this.keySize = (short) key.length;
+        this.valueSize = value.length;
         this.key = key;
         this.value = value;
-    }
-
-    private static void calculateCrc() {
-
     }
 
     /**
@@ -80,8 +78,20 @@ public final class LogRecord {
      *
      * @return fully encoded record bytes including header and CRC
      */
-    public byte[] encode() {
+    public byte[] encode(long timestamp, short keySize, int valueSize, byte[] key, byte[] value) {
         ByteBuffer buffer = ByteBuffer.allocate(totalSize());
+        buffer.position(CRC_SIZE);
+        buffer.putLong(timestamp);
+        buffer.putShort(keySize);
+        buffer.putInt(valueSize);
+        buffer.put(key);
+        buffer.put(value);
+
+        //Calculate CRC32
+        CRC32 checksum = new CRC32();
+        checksum.update(buffer.array(), CRC_SIZE, totalSize() - CRC_SIZE);
+        buffer.putInt(0, (int) checksum.getValue());
+        return buffer.array();
     }
 
     /**
