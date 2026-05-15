@@ -26,21 +26,15 @@ import java.util.zip.CRC32;
 public final class LogRecord {
 
     /** Fixed header size in bytes: crc(4) + ts(8) + ksz(2) + vsz(4). */
-    private static final int HEADER = 18;
+    private static final int HEADER_SIZE = 18;
     private static final int CRC_SIZE = 4;
 
-    private final int crc;
     private final long timestamp;
-    private final short keySize;
-    private final int valueSize;
     private final byte[] key;
     private final byte[] value;
 
-    public LogRecord(int crc, long timestamp, byte[] key, byte[] value) {
-        this.crc = crc;
+    public LogRecord(long timestamp, byte[] key, byte[] value) {
         this.timestamp = timestamp;
-        this.keySize = (short) key.length;
-        this.valueSize = value.length;
         this.key = key;
         this.value = value;
     }
@@ -78,12 +72,12 @@ public final class LogRecord {
      *
      * @return fully encoded record bytes including header and CRC
      */
-    public byte[] encode(long timestamp, short keySize, int valueSize, byte[] key, byte[] value) {
+    public byte[] encode() {
         ByteBuffer buffer = ByteBuffer.allocate(totalSize());
         buffer.position(CRC_SIZE);
-        buffer.putLong(timestamp);
-        buffer.putShort(keySize);
-        buffer.putInt(valueSize);
+        buffer.putLong(this.timestamp);
+        buffer.putShort((short)this.key.length);
+        buffer.putInt(this.value.length );
         buffer.put(key);
         buffer.put(value);
 
@@ -100,8 +94,7 @@ public final class LogRecord {
      * @return totalSize to allocate for ByteBuffer
      */
     public int totalSize() {
-        return Integer.BYTES + Long.BYTES + Short.BYTES + Integer.BYTES
-                + keySize + valueSize;
+        return HEADER_SIZE + key.length+value.length;
     }
 
     /**
@@ -126,8 +119,8 @@ public final class LogRecord {
         return "LogRecord{" +
                 "ts=" + timestamp +
                 ", key=" + new String(key, StandardCharsets.UTF_8) +
-                ", keyLen=" + keySize +
-                ", valueLen=" + valueSize;
+                ", keyLen=" + key.length +
+                ", valueLen=" + value.length;
     }
 
     //Helper methods for toString
