@@ -1,5 +1,7 @@
+/* (C)2026 */
 package com.bitcask.storage;
 
+import com.bitcask.Exception.BitcaskException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.CRC32;
@@ -26,14 +28,18 @@ import java.util.zip.CRC32;
 public final class LogRecord {
 
     /** Fixed header size in bytes: crc(4) + ts(8) + ksz(2) + vsz(4). */
-    private static final int HEADER_SIZE = 18;
-    private static final int CRC_SIZE = 4;
+    public static final int HEADER_SIZE = 18;
+
+    public static final int CRC_SIZE = 4;
 
     private final long timestamp;
     private final byte[] key;
     private final byte[] value;
 
     public LogRecord(long timestamp, byte[] key, byte[] value) {
+        if (key == null || key.length == 0) {
+            throw new BitcaskException("Key cannot be null or empty");
+        }
         this.timestamp = timestamp;
         this.key = key;
         this.value = value;
@@ -58,6 +64,16 @@ public final class LogRecord {
     }
 
     /**
+     * Returns the value bytes for this record.
+     * Returns an empty array for tombstone (delete) records.
+     *
+     * @return value bytes; never null, empty array for deletes
+     */
+    public byte[] getValue() {
+        return value;
+    }
+
+    /**
      * Returns {@code true} if this record represents a deleted key.
      */
     public boolean isTombstone() {
@@ -73,15 +89,18 @@ public final class LogRecord {
      * @return fully encoded record bytes including header and CRC
      */
     public byte[] encode() {
+        // allocate buffer for header + key + value
         ByteBuffer buffer = ByteBuffer.allocate(totalSize());
+
+        // skip CRC for now, will fill in after calculating
         buffer.position(CRC_SIZE);
         buffer.putLong(this.timestamp);
-        buffer.putShort((short)this.key.length);
-        buffer.putInt(this.value.length );
+        buffer.putShort((short) this.key.length);
+        buffer.putInt(this.value.length);
         buffer.put(key);
         buffer.put(value);
 
-        //Calculate CRC32
+        // Calculate CRC32
         CRC32 checksum = new CRC32();
         checksum.update(buffer.array(), CRC_SIZE, totalSize() - CRC_SIZE);
         buffer.putInt(0, (int) checksum.getValue());
@@ -93,8 +112,8 @@ public final class LogRecord {
      *
      * @return totalSize to allocate for ByteBuffer
      */
-    public int totalSize() {
-        return HEADER_SIZE + key.length+value.length;
+    private int totalSize() {
+        return HEADER_SIZE + key.length + value.length;
     }
 
     /**
@@ -116,42 +135,47 @@ public final class LogRecord {
      */
     @Override
     public String toString() {
-        return "LogRecord{" +
-                "ts=" + timestamp +
-                ", key=" + new String(key, StandardCharsets.UTF_8) +
-                ", keyLen=" + key.length +
-                ", valueLen=" + value.length;
+        return "LogRecord{"
+                + "ts="
+                + timestamp
+                + ", key="
+                + new String(key, StandardCharsets.UTF_8)
+                + ", keyLen="
+                + key.length
+                + ", valueLen="
+                + value.length
+                + "}";
     }
 
-    //Helper methods for toString
+    // Helper methods for toString
 
-//    private String toReadable(byte[] data) {
-//        if (data == null) return "null";
-//
-//        // Try to interpret as UTF-8, fallback to hex if not printable
-//        String str = new String(data, java.nio.charset.StandardCharsets.UTF_8);
-//
-//        if (isPrintable(str)) {
-//            return str;
-//        }
-//
-//        return toHex(data);
-//    }
-//
-//    private boolean isPrintable(String str) {
-//        for (char c : str.toCharArray()) {
-//            if (Character.isISOControl(c)) {
-//                return false;
-//            }
-//        }
-//        return true;
-//    }
-//
-//    private String toHex(byte[] bytes) {
-//        StringBuilder sb = new StringBuilder();
-//        for (byte b : bytes) {
-//            sb.append(String.format("%02x", b));
-//        }
-//        return sb.toString();
-//    }
+    //    private String toReadable(byte[] data) {
+    //        if (data == null) return "null";
+    //
+    //        // Try to interpret as UTF-8, fallback to hex if not printable
+    //        String str = new String(data, java.nio.charset.StandardCharsets.UTF_8);
+    //
+    //        if (isPrintable(str)) {
+    //            return str;
+    //        }
+    //
+    //        return toHex(data);
+    //    }
+    //
+    //    private boolean isPrintable(String str) {
+    //        for (char c : str.toCharArray()) {
+    //            if (Character.isISOControl(c)) {
+    //                return false;
+    //            }
+    //        }
+    //        return true;
+    //    }
+    //
+    //    private String toHex(byte[] bytes) {
+    //        StringBuilder sb = new StringBuilder();
+    //        for (byte b : bytes) {
+    //            sb.append(String.format("%02x", b));
+    //        }
+    //        return sb.toString();
+    //    }
 }
