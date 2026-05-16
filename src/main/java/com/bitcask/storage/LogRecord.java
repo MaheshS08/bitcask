@@ -46,6 +46,33 @@ public final class LogRecord {
     }
 
     /**
+     * Decodes a record from the given ByteBuffer, starting at its current position.
+     * <p>Layout: [ crc(4) | timestamp(8) | key_size(2) | value_size(4) | key | value ]</p>
+     *
+     * @param buffer source buffer positioned at the start of a record header
+     * @return decoded {@link LogRecord}
+     * @throws BitcaskException if the CRC does not match (corrupt or partial record)
+     */
+    public static LogRecord decode(ByteBuffer buffer) {
+        int startPosition = buffer.position();
+        int storedCrc = buffer.getInt();
+        long timestamp = buffer.getLong();
+        int keySize = Short.toUnsignedInt(buffer.getShort());
+        int valueSize = buffer.getInt();
+        byte[] key = new byte[keySize];
+        buffer.get(key);
+        byte[] value = new byte[valueSize];
+        buffer.get(value);
+        CRC32 checksum = new CRC32();
+        int totalRecordSize = HEADER_SIZE + keySize + valueSize;
+        checksum.update(buffer.array(), startPosition + CRC_SIZE, totalRecordSize - CRC_SIZE);
+        if (storedCrc != (int) checksum.getValue()) {
+            throw BitcaskException.crcMismatch(startPosition);
+        }
+        return new LogRecord(timestamp, key, value);
+    }
+
+    /**
      * Returns the Unix epoch millis timestamp of this record.
      *
      * @return timestamp in milliseconds
@@ -83,7 +110,7 @@ public final class LogRecord {
     /**
      * Encodes this record into a byte array suitable for appending to a data file.
      *
-     * <p>Layout: [ crc(4) | type(1) | timestamp(8) | key_size(2) | value_size(4) | key | value ]
+     * <p>Layout: [ crc(4) | timestamp(8) | key_size(2) | value_size(4) | key | value ]</p>
      * CRC is computed over all bytes from type onward.
      *
      * @return fully encoded record bytes including header and CRC
@@ -121,8 +148,8 @@ public final class LogRecord {
      *
      * <p>Format:
      * <pre>
-     * LogRecord{ts=1714000000000, key="user:123", keyLen=8, valueLen=42}
-     * LogRecord{ts=1714000001000, key="user:123", keyLen=8, valueLen=0}
+     * LogRecord{ts=1714000000000, key="user:123", keyLen=8, valueLen=42, type=PUT}
+     * LogRecord{ts=1714000001000, key="user:123", keyLen=8, valueLen=0, type=DELETE}
      * </pre>
      *
      * <p>The key is displayed as a UTF-8 string if all bytes are printable ASCII,
@@ -144,6 +171,8 @@ public final class LogRecord {
                 + key.length
                 + ", valueLen="
                 + value.length
+                + ",type="
+                + (isTombstone() ? "DELETE" : "PUT")
                 + "}";
     }
 
