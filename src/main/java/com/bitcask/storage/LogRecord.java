@@ -2,6 +2,7 @@
 package com.bitcask.storage;
 
 import com.bitcask.Exception.BitcaskException;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.CRC32;
@@ -38,7 +39,13 @@ public final class LogRecord {
 
     public LogRecord(long timestamp, byte[] key, byte[] value) {
         if (key == null || key.length == 0) {
-            throw new BitcaskException("Key cannot be null or empty");
+            throw BitcaskException.nullOrEmpty();
+        }
+        if (key.length > 65535) {
+            throw BitcaskException.keyTooLarge(key.length, 65535);
+        }
+        if (value == null) {
+            throw BitcaskException.nullValue();
         }
         this.timestamp = timestamp;
         this.key = key;
