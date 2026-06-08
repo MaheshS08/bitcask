@@ -1,5 +1,7 @@
 /* (C)2026 */
-package com.bitcask.Exception;
+package com.bitcask.exception;
+
+import java.nio.file.Path;
 
 public class BitcaskException extends RuntimeException {
     public BitcaskException(String message) {
@@ -50,5 +52,14 @@ public class BitcaskException extends RuntimeException {
                         + " bytes. Maximum allowed size is "
                         + maximumSize
                         + " bytes (unsigned short limit).");
+    }
+
+    /**
+     * Thrown when a write is attempted on a read-only data file.
+     *
+     * @param path the path of the read-only file
+     */
+    public static BitcaskException readOnlyFile(Path path) {
+        return new BitcaskException("File is read-only and cannot be written to: " + path);
     }
 }

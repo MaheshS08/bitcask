@@ -1,8 +1,7 @@
 /* (C)2026 */
 package com.bitcask.storage;
 
-import com.bitcask.Exception.BitcaskException;
-
+import com.bitcask.exception.BitcaskException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.CRC32;
