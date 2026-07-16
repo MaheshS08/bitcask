@@ -1,6 +1,7 @@
 /* (C)2026 */
 package com.bitcask.storage;
 
+import com.bitcask.config.BitcaskConfig;
 import com.bitcask.exception.BitcaskException;
 import java.io.Closeable;
 import java.io.IOException;
@@ -17,7 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * {@link #readAt(long)}.
  *
  * <p><b>Thread safety:</b> {@link #append(LogRecord)} is NOT thread-safe.
- * The caller ({@link com.bitcask.BitcaskStore}) is responsible for
+ * The caller ({@link com.bitcask.client.BitcaskStore}) is responsible for
  * serializing all writes. {@link #readAt(long)} IS thread-safe and may
  * be called by multiple threads concurrently.
  *

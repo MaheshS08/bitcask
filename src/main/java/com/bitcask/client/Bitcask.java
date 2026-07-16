@@ -2,6 +2,7 @@
 package com.bitcask.client;
 
 import com.bitcask.exception.BitcaskException;
+import com.bitcask.metrics.StoreStats;
 import java.util.Set;
 
 /**

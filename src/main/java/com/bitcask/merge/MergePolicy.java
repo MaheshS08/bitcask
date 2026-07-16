@@ -1,5 +1,7 @@
+/* (C)2026 */
 package com.bitcask.merge;
 
+import com.bitcask.metrics.StoreStats;
 
 /**
  * Strategy interface for deciding whether a Bitcask store should run compaction.
@@ -12,5 +14,13 @@ package com.bitcask.merge;
  * MergePolicy alwaysMerge = stats -> true;
  * }</pre>
  */
+@FunctionalInterface
 public interface MergePolicy {
+    /**
+     * Returns true if the store should run a merge based on current statistics.
+     *
+     * @param stats current point-in-time store statistics; never null
+     * @return true if merge should proceed
+     */
+    boolean shouldMerge(StoreStats stats);
 }

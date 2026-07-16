@@ -3,6 +3,7 @@ package com.bitcask.client;
 
 import com.bitcask.config.BitcaskConfig;
 import com.bitcask.index.KeyDir;
+import com.bitcask.metrics.StoreStats;
 import com.bitcask.storage.DataFile;
 import java.nio.file.Path;
 import java.util.Map;
@@ -10,14 +11,6 @@ import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class BitcaskStore implements Bitcask {
-
-    //    config          BitcaskConfig
-    //    keyDir          KeyDir
-    //    activeFile      DataFile
-    //    immutableFiles  Map<Long, DataFile>      fileId → read-only DataFile
-    //    writeLock       ReentrantReadWriteLock
-    //    mergeExecutor   ScheduledExecutorService  null if backgroundMergeEnabled=false
-    //    directory       Path
 
     private final BitcaskConfig config;
     private final KeyDir keyDir;
